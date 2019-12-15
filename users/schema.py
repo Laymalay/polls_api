@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from graphql_jwt.decorators import login_required
+from graphene_file_upload.scalars import Upload
 
 import graphene
 from graphene_django import DjangoObjectType
@@ -53,9 +54,23 @@ class UpdateUser(graphene.Mutation):
         return UpdateUser(id=id, email=email, first_name=first_name, last_name=last_name, about=about)
 
 
+class UploadMutation(graphene.Mutation):
+    class Arguments:
+        file = Upload(required=True)
+        print(file)
+
+    success = graphene.Boolean()
+
+    def mutate(self, info, file, **kwargs):
+        print(file)
+        print('sdfsdf')
+        print(info.context)
+        return UploadMutation(success=True)
+
 class Mutation(graphene.ObjectType):
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
+    upload_file = UploadMutation.Field()
 
 
 class Query(graphene.AbstractType):

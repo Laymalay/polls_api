@@ -1,8 +1,9 @@
 import boto3
+from .config import BUCKET_NAME
 
 
 class AwsClient:
-    def upload_file(self, file_name, bucket):
+    def upload_file(self, file_name, bucket=BUCKET_NAME):
         """
         Function to upload a file to an S3 bucket
         """
@@ -12,7 +13,7 @@ class AwsClient:
 
         return response
 
-    def download_file(self, file_name, bucket):
+    def download_file(self, file_name, bucket=BUCKET_NAME):
         """
         Function to download a given file from an S3 bucket
         """
@@ -22,7 +23,7 @@ class AwsClient:
 
         return output
 
-    def list_files(self, bucket):
+    def list_files(self, bucket=BUCKET_NAME):
         """
         Function to list files in a given S3 bucket
         """
