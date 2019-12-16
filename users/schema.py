@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
 from graphql_jwt.decorators import login_required
+from graphene_file_upload.scalars import Upload
 
 import graphene
 from graphene_django import DjangoObjectType
 from users.models import CustomUser
+from aws.client import AwsClient
 
 
 class UserType(DjangoObjectType):
@@ -36,6 +38,8 @@ class UpdateUser(graphene.Mutation):
     first_name = graphene.String(required=True)
     last_name = graphene.String(required=True)
     about = graphene.String(required=True)
+    avatar = graphene.String(required=False)
+
     id = graphene.ID()
 
     class Arguments:
@@ -44,13 +48,26 @@ class UpdateUser(graphene.Mutation):
         first_name = graphene.String(required=True)
         last_name = graphene.String(required=True)
         about = graphene.String(required=True)
+        avatar = Upload(required=False)
 
     @login_required
-    def mutate(self, info, id, email, first_name, last_name, about):
+    def mutate(self, info, id, email, avatar, first_name, last_name, about):
+        url = None
+
+        if avatar and not isinstance(avatar, str):
+            cli = AwsClient()
+            url = cli.upload_file_obj(avatar)
+            CustomUser.objects.filter(pk=id).update(avatar=url)
+
         CustomUser.objects.filter(pk=id).update(
             email=email, first_name=first_name, last_name=last_name, about=about)
 
-        return UpdateUser(id=id, email=email, first_name=first_name, last_name=last_name, about=about)
+        return UpdateUser(id=id,
+                          email=email,
+                          avatar=url,
+                          first_name=first_name,
+                          last_name=last_name,
+                          about=about)
 
 
 class Mutation(graphene.ObjectType):
@@ -71,5 +88,4 @@ class Query(graphene.AbstractType):
         user = info.context.user
         if user.is_anonymous:
             raise Exception('Not logged in!')
-
         return user
