@@ -56,8 +56,10 @@ class UpdateUser(graphene.Mutation):
 
         if avatar and not isinstance(avatar, str):
             cli = AwsClient()
-            url = cli.upload_file_obj(avatar)
-            CustomUser.objects.filter(pk=id).update(avatar=url)
+            key = cli.upload_file_obj(avatar)
+            url = cli.generate_presigned_url(key)
+            CustomUser.objects.filter(pk=id).update(
+                avatar_key=key, avatar=url)
 
         CustomUser.objects.filter(pk=id).update(
             email=email, first_name=first_name, last_name=last_name, about=about)
@@ -89,13 +91,14 @@ class Query(graphene.AbstractType):
         user = info.context.user
         if user.is_anonymous:
             raise Exception('Not logged in!')
+
         return user
 
     @login_required
     def resolve_user(self, info, **kwargs):
         id = kwargs.get('id')
-
         if id is not None:
-            return CustomUser.objects.get(pk=id)
+            user = CustomUser.objects.get(pk=id)
+            return user
 
         return None
