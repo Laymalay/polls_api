@@ -78,10 +78,11 @@ class Mutation(graphene.ObjectType):
 class Query(graphene.AbstractType):
     me = graphene.Field(UserType)
     users = graphene.List(UserType)
+    user = graphene.Field(UserType, id=graphene.Int())
 
     @login_required
     def resolve_users(self, info):
-        return get_user_model().objects.all()
+        return CustomUser.objects.all()
 
     @login_required
     def resolve_me(self, info):
@@ -89,3 +90,12 @@ class Query(graphene.AbstractType):
         if user.is_anonymous:
             raise Exception('Not logged in!')
         return user
+
+    @login_required
+    def resolve_user(self, info, **kwargs):
+        id = kwargs.get('id')
+
+        if id is not None:
+            return CustomUser.objects.get(pk=id)
+
+        return None
