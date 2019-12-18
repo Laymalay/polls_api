@@ -19,13 +19,14 @@ class AwsClient:
         return key
 
     def generate_presigned_url(self, key, bucket=BUCKET_NAME):
-        print('generate for', key)
-        return self.s3_client.generate_presigned_url('get_object',
-                                                     Params={
-                                                         'Bucket': bucket,
-                                                         'Key': key,
-                                                     },
-                                                     ExpiresIn=36000)
+        if key:
+            return self.s3_client.generate_presigned_url('get_object',
+                                                         Params={
+                                                             'Bucket': bucket,
+                                                             'Key': key,
+                                                         },
+                                                         ExpiresIn=36000)
+        return None
 
     def download_file_obj(self, key, bucket=BUCKET_NAME):
         """
