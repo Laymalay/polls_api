@@ -117,6 +117,31 @@ class UpdatePoll(graphene.Mutation):
                           title=poll.title)
 
 
+class QuestionInputType(graphene.InputObjectType):
+    title = graphene.String(required=True)
+    answer = graphene.String(required=True)
+
+
+class ChoiceInputType(graphene.InputObjectType):
+    title = graphene.String(required=True)
+    question_title = graphene.String(required=True)
+
+
+def create_questions(questions, poll_id):
+    for question in questions:
+        new_question = Question(title=question.title, poll=Poll.objects.get(
+            pk=poll_id), answer=question.answer)
+        new_question.save()
+
+
+def create_choices(choices, poll_id):
+    for choice in choices:
+        new_choice = Choice(title=choice.title, question=Question.objects.get(
+            title=choice.question_title, poll=Poll.objects.get(
+                pk=poll_id)))
+        new_choice.save()
+
+
 class CreatePoll(graphene.Mutation):
     creator = graphene.Field(UserType)
     title = graphene.String(required=True)
@@ -128,14 +153,20 @@ class CreatePoll(graphene.Mutation):
         title = graphene.String(required=True)
         image_path = graphene.String()
         description = graphene.String()
+        questions = graphene.List(QuestionInputType)
+        choices = graphene.List(ChoiceInputType)
 
     poll = graphene.Field(PollType)
 
     @login_required
-    def mutate(self, info, title, description, image_path):
+    def mutate(self, info, title, description, image_path, questions, choices):
         poll = Poll(title=title, creator=info.context.user,
                     description=description, image_path=image_path)
         poll.save()
+
+        create_questions(questions, poll.id)
+        create_choices(choices, poll.id)
+
         return CreatePoll(creator=poll.creator,
                           id=poll.id,
                           description=poll.description,
