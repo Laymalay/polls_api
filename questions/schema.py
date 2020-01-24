@@ -8,6 +8,8 @@ from polls.models import Poll
 
 
 class QuestionType(DjangoObjectType):
+    stat = graphene.types.json.JSONString()
+
     class Meta:
         model = Question
 
@@ -25,9 +27,23 @@ class ChoiceType(DjangoObjectType):
 class Query(object):
     all_questions = graphene.List(QuestionType)
     all_choices = graphene.List(ChoiceType)
-    
+
     question = graphene.Field(QuestionType,
-                              id=graphene.Int())
+                              id=graphene.Int(), stat=graphene.Boolean())
+
+    @staticmethod
+    def calculate_stat(question):
+        stat = {}
+        
+        choices = Choice.objects.filter(question=question.id)
+        for choice in choices:
+            stat.update({choice.id: 0})
+
+        answers = AnsweredQuestion.objects.filter(question=question.id)
+        for answer in answers:
+            stat[answer.choice.id] += 1
+
+        return stat
 
     @login_required
     def resolve_all_questions(self, info, **kwargs):
@@ -40,9 +56,13 @@ class Query(object):
     @login_required
     def resolve_question(self, info, **kwargs):
         id = kwargs.get('id')
+        with_stat = kwargs.get('stat')
 
         if id is not None:
-            return Question.objects.get(pk=id)
+            question = Question.objects.get(pk=id)
+            if with_stat:
+                question.stat = Query.calculate_stat(question)
+            return question
         return None
 
 
