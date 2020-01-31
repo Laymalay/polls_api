@@ -60,10 +60,11 @@ class UpdateUser(graphene.Mutation):
             url = cli.generate_presigned_url(key)
             CustomUser.objects.filter(pk=id).update(
                 avatar_key=key, avatar=url)
+        else:
+            url = avatar
 
         CustomUser.objects.filter(pk=id).update(
             email=email, first_name=first_name, last_name=last_name, about=about)
-
         return UpdateUser(id=id,
                           email=email,
                           avatar=url,

@@ -33,17 +33,22 @@ class Query(object):
 
     @staticmethod
     def calculate_stat(question):
-        stat = {}
-        
+        stat_dict = {}
+        result = []
+
         choices = Choice.objects.filter(question=question.id)
         for choice in choices:
-            stat.update({choice.id: 0})
+            stat_dict.update({choice.id: {'title': choice.title, 'value': 0}})
 
         answers = AnsweredQuestion.objects.filter(question=question.id)
         for answer in answers:
-            stat[answer.choice.id] += 1
+            stat_dict[answer.choice.id]['value'] += 1
 
-        return stat
+        for key, body in stat_dict.items():
+            temp = {'id': key, 'value': body['value'], 'title': body['title']}
+            result.append(temp)
+
+        return result
 
     @login_required
     def resolve_all_questions(self, info, **kwargs):
